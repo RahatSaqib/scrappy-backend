@@ -11,14 +11,15 @@ import fs from 'fs/promises'
 import path from 'path'
 import { uploadFileToAWS } from "../common/fileService";
 
-async function updatePageContent(page: Page, inputSelector: string, inputValue: string, optionSelector: string, optionValue: string, buttonSelector: string) {
+async function updatePageContent(page: Page, inputSelector: string, inputValue: string, optionSelector: string, optionValue: string, buttonSelector: string, waitForSelector: string) {
     try {
         await page.waitForSelector(inputSelector)
         await page.focus(inputSelector)
         await page.keyboard.type(inputValue)
         await page.select(optionSelector, optionValue)
         await page.click(buttonSelector);
-        await sleep(1000)
+        // await sleep(1000)
+        await page.waitForSelector(waitForSelector)
         return page
     }
     catch (err) {
@@ -32,15 +33,17 @@ async function handleEdgeCases(page: Page, property: any, providers: Array<any>)
         let optionSelector = '#factype'
         let optionValue = 'all,all'
         let buttonSelector = 'button[type="submit"]'
+        let waitingSelector = inputSelector
         let func = scrapeTexusInfoFromTable
         if (property.State == 'Florida') {
             inputSelector = '#ctl00_mainContentPlaceHolder_FacilityName'
             optionSelector = '#ctl00_mainContentPlaceHolder_FacilityType'
             buttonSelector = 'input[type="submit"]'
+            waitingSelector = '#ctl00_mainContentPlaceHolder_tblFilterOptions'
             optionValue = 'ALL'
             func = scrapeFloridaInfoFromTable
         }
-        page = await updatePageContent(page, inputSelector, property.Name, optionSelector, optionValue, buttonSelector)
+        page = await updatePageContent(page, inputSelector, property.Name, optionSelector, optionValue, buttonSelector, waitingSelector)
         const content = await page.content()
         const $ = cheerio.load(content)
         providers = await func($)
@@ -134,6 +137,10 @@ const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunc
     catch (err) {
         browser.close()
         console.log(err)
+        res.status(500).json({
+            success: false,
+            data: 'Data Scraping Failed',
+        })
     }
 
 
