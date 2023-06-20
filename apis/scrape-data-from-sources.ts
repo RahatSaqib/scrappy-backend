@@ -12,34 +12,44 @@ import path from 'path'
 import { uploadFileToAWS } from "../common/fileService";
 
 async function updatePageContent(page: Page, inputSelector: string, inputValue: string, optionSelector: string, optionValue: string, buttonSelector: string) {
-    await page.waitForSelector(inputSelector)
-    await page.focus(inputSelector)
-    await page.keyboard.type(inputValue)
-    await page.select(optionSelector, optionValue)
-    await page.click(buttonSelector);
-    await sleep(1000)
-    return page
+    try {
+        await page.waitForSelector(inputSelector)
+        await page.focus(inputSelector)
+        await page.keyboard.type(inputValue)
+        await page.select(optionSelector, optionValue)
+        await page.click(buttonSelector);
+        await sleep(1000)
+        return page
+    }
+    catch (err) {
+        throw err
+    }
 }
 
 async function handleEdgeCases(page: Page, property: any, providers: Array<any>) {
-    let inputSelector = '#searchterm'
-    let optionSelector = '#factype'
-    let optionValue = 'all,all'
-    let buttonSelector = 'button[type="submit"]'
-    let func = scrapeTexusInfoFromTable
-    if (property.State == 'Florida') {
-        inputSelector = '#ctl00_mainContentPlaceHolder_FacilityName'
-        optionSelector = '#ctl00_mainContentPlaceHolder_FacilityType'
-        buttonSelector = 'input[type="submit"]'
-        optionValue = 'ALL'
-        func = scrapeFloridaInfoFromTable
-    }
-    page = await updatePageContent(page, inputSelector, property.Name, optionSelector, optionValue, buttonSelector)
-    const content = await page.content()
-    const $ = cheerio.load(content)
-    providers = await func($)
+    try {
+        let inputSelector = '#searchterm'
+        let optionSelector = '#factype'
+        let optionValue = 'all,all'
+        let buttonSelector = 'button[type="submit"]'
+        let func = scrapeTexusInfoFromTable
+        if (property.State == 'Florida') {
+            inputSelector = '#ctl00_mainContentPlaceHolder_FacilityName'
+            optionSelector = '#ctl00_mainContentPlaceHolder_FacilityType'
+            buttonSelector = 'input[type="submit"]'
+            optionValue = 'ALL'
+            func = scrapeFloridaInfoFromTable
+        }
+        page = await updatePageContent(page, inputSelector, property.Name, optionSelector, optionValue, buttonSelector)
+        const content = await page.content()
+        const $ = cheerio.load(content)
+        providers = await func($)
 
-    return providers
+        return providers
+    }
+    catch (err) {
+        throw err
+    }
 }
 async function loadImagesAndUpload(foldername: string, propertyId: number) {
     let folderPath = 'sample_data/' + foldername
@@ -56,7 +66,27 @@ async function loadImagesAndUpload(foldername: string, propertyId: number) {
         }
     }
     catch (err) {
-        console.log({ err })
+        throw err
+    }
+}
+
+async function updateProviders(providers: PropertyType[], propertyId: string | number) {
+    try {
+
+        for (let provider of providers) {
+            let searchQuery = `select id from ${tables.providers} where name='${provider.name}' and property_id='${propertyId}'`
+            let response = await executeQuery(searchQuery)
+            if (!response.length) {
+                let insertQuery = `insert into ${tables.providers}
+            (name, address, city, country, phone,type,zipcode,capacity,state,property_id) 
+            values('${provider.name}','${provider.address}','${provider.city}','${provider.country}',
+            '${provider.phone}','${provider.type}','${provider.zipcode}','${provider.capacity}','${provider.state}',${propertyId})`
+                await executeQuery(insertQuery)
+            }
+        }
+    }
+    catch (err) {
+        throw err
     }
 }
 
@@ -74,31 +104,38 @@ const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunc
         ],
     });
     const page = await browser.newPage();
-    for (let item in siteAndUrl) {
-        let items = properties.filter((property: any) => property.State == item)
-        for await (let property of items) {
-            await page.goto(siteAndUrl[item], { waitUntil: 'networkidle2' });
+    try {
+        for await (let property of properties) {
+            await page.goto(siteAndUrl[property.State], { waitUntil: 'networkidle2' });
             providers = await handleEdgeCases(page, property, providers)
+            console.log(providers)
             let tableName = tables.properties
             let searchQuery = `select * from ${tableName} where name = '${property.Name}'`
             let response = await executeQuery(searchQuery)
             if (!response.length) {
                 let insertQuery = `insert into ${tableName}
-                (name , state) values('${property.Name}','${property.State}')`
+                    (name , state) values('${property.Name}','${property.State}')`
                 await executeQuery(insertQuery)
                 let searchQuery = `select * from ${tableName} where name = '${property.Name}'`
                 response = await executeQuery(searchQuery)
                 await loadImagesAndUpload(property.Name, response[0].id)
             }
+
+            await updateProviders(providers, response[0].id)
         }
 
-    }
-    browser.close()
+        browser.close()
 
-    res.status(200).json({
-        success: true,
-        data: providers,
-    })
+        res.status(200).json({
+            success: true,
+            data: 'Data Scraped Successfully',
+        })
+    }
+    catch (err) {
+        browser.close()
+        console.log(err)
+    }
+
 
 }
 

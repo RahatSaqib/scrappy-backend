@@ -12,7 +12,7 @@ export const scrapeFloridaInfoFromTable = async ($: CheerioAPI) => {
     for await (let elem of elements) {
         let item = {} as PropertyType
         if ($(elem).attr('class') != 'tableResultsHead') {
-            item.name = $('td:nth-child(1)', elem).find('a').text()
+            item.name = $('td:nth-child(1)', elem).find('a')?.text()?.replace(/\n|\r/g, "")?.trim()
             item.type = $('td:nth-child(2)', elem).text()
             item.address = $('td:nth-child(3)', elem).text()
             item.city = $('td:nth-child(4)', elem).text()
