@@ -66,7 +66,13 @@ const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunc
 
     let providers: PropertyType[] = []
 
-    const browser = await puppeteer.launch({ headless: 'new' });
+    const browser = await puppeteer.launch({
+        headless: 'new',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+        ],
+    });
     const page = await browser.newPage();
     for (let item in siteAndUrl) {
         let items = properties.filter((property: any) => property.State == item)
