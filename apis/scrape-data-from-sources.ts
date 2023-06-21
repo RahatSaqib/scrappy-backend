@@ -1,7 +1,6 @@
 
-import { NextFunction, Request, Response } from "express";
-import DB from "../config/connectToDatabase";
-import { executeQuery, readFileFromCsv, siteAndUrl, sleep, tables } from "../common/common";
+import { Response } from "express";
+import { executeQuery, readFileFromCsv, siteAndUrl, tables } from "../common/common";
 import cheerio from "cheerio";
 import { scrapeTexusInfoFromTable } from "../sites/texas";
 import puppeteer, { Page } from "puppeteer";
@@ -73,16 +72,16 @@ async function loadImagesAndUpload(foldername: string, propertyId: number) {
     }
 }
 
-async function updateProviders(providers: PropertyType[], propertyId: string | number) {
+async function updateProviders(providers: PropertyType[], propertyId: string | number, propertyName: string) {
     try {
 
         for (let provider of providers) {
-            let searchQuery = `select id from ${tables.providers} where name='${provider.name}' and property_id='${propertyId}'`
+            let searchQuery = `select id from ${tables.providers} where name='${propertyName}' and property_id='${propertyId}'`
             let response = await executeQuery(searchQuery)
             if (!response.length) {
                 let insertQuery = `insert into ${tables.providers}
             (name, address, city, country, phone,type,zipcode,capacity,state,property_id) 
-            values('${provider.name}','${provider.address}','${provider.city}','${provider.country}',
+            values('${propertyName}','${provider.address}','${provider.city}','${provider.country}',
             '${provider.phone}','${provider.type}','${provider.zipcode}','${provider.capacity}','${provider.state}',${propertyId})`
                 await executeQuery(insertQuery)
             }
@@ -93,7 +92,7 @@ async function updateProviders(providers: PropertyType[], propertyId: string | n
     }
 }
 
-const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+const scrapeDataFromSources = async (res: Response): Promise<any> => {
     let filepath = 'sample_data/Sample_Properties_Data.csv'
     var properties: any = await readFileFromCsv(filepath);
 
@@ -124,10 +123,10 @@ const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunc
                 await loadImagesAndUpload(property.Name, response[0].id)
             }
 
-            await updateProviders(providers, response[0].id)
+            await updateProviders(providers, response[0].id, property.Name)
         }
 
-        browser.close()
+        await browser.close()
 
         res.status(200).json({
             success: true,
@@ -135,12 +134,12 @@ const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunc
         })
     }
     catch (err) {
-        browser.close()
+        await browser.close()
         console.log(err)
-        res.status(500).json({
-            success: false,
-            data: 'Data Scraping Failed',
-        })
+        // res.status(500).json({
+        //     success: false,
+        //     data: 'Data Scraping Failed',
+        // })
     }
 
 
