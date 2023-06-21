@@ -76,7 +76,7 @@ async function updateProviders(providers: PropertyType[], propertyId: string | n
     try {
 
         for (let provider of providers) {
-            let searchQuery = `select id from ${tables.providers} where name='${propertyName}' and property_id='${propertyId}'`
+            let searchQuery = `select id from ${tables.providers} where name='${propertyName}' and property_id='${propertyId}' and zipcode='${provider.zipcode}'`
             let response = await executeQuery(searchQuery)
             if (!response.length) {
                 let insertQuery = `insert into ${tables.providers}
@@ -84,6 +84,17 @@ async function updateProviders(providers: PropertyType[], propertyId: string | n
             values('${propertyName}','${provider.address}','${provider.city}','${provider.country}',
             '${provider.phone}','${provider.type}','${provider.zipcode}','${provider.capacity}','${provider.state}',${propertyId})`
                 await executeQuery(insertQuery)
+            }
+            else {
+                for (let row of response) {
+                    let updateQuery = `UPDATE ${tables.providers}
+                    SET name='${propertyName}',city='${provider.city}',country='${provider.country}',
+                    phone='${provider.phone}',type='${provider.type}',address='${provider.address}',
+                    capacity='${provider.capacity}',state='${provider.state}' 
+                    where id =${row.id}
+                    `
+                    await executeQuery(updateQuery)
+                }
             }
         }
     }
