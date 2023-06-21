@@ -108,7 +108,7 @@ const scrapeDataFromSources = async (res: Response): Promise<any> => {
     const page = await browser.newPage();
     try {
         for await (let property of properties) {
-            await page.goto(siteAndUrl[property.State], { waitUntil: 'networkidle2' });
+            await page.goto(siteAndUrl[property.State], { waitUntil: 'domcontentloaded', timeout: 0 });
             providers = await handleEdgeCases(page, property, providers)
             console.log(providers)
             let tableName = tables.properties

@@ -127,11 +127,19 @@ export const getTable = async (type: any) => {
 // }
 
 export const getElementFromUrl = async (url: string) => {
-    const { data } = await axios({
-        method: "GET",
-        url: url,
+    const browser = await puppeteer.launch({
+        headless: 'new',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+        ],
     });
-    const $ = cheerio.load(data);
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 0 });
+    await page.waitForSelector('.main-content')
+    const content = await page.content()
+    const $ = cheerio.load(content)
+    await browser.close()
     return $
 }
 

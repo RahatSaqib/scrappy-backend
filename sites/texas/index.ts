@@ -5,18 +5,23 @@ import { CheerioAPI } from "cheerio";
 
 const baseUrl = 'https://apps.hhs.texas.gov/LTCSearch/'
 
-async function scrapeFromDetailsPage(items: PropertyType[]) {
-    for await (let item of items) {
-        let $ = await getElementFromUrl(item.url)
-        let elements = $('#p7TP3c1_1 div ul li').toArray()
-        for await (let elem of elements) {
-            if ($(elem).text().includes('Bed Count')) {
-                item.capacity = $(elem).text().replace(/\D/g, '')
-            }
-            item.phone = $("#p7EHCd_2 p i.fa-phone").first().nextUntil("i").addBack().text();
+async function scrapeFromDetailsPage(item: PropertyType) {
+
+    let $ = await getElementFromUrl(item.url)
+    let elements = $('.main-content > div > div > div  ul  li').toArray()
+    for await (let elem of elements) {
+        if ($(elem).text().includes('Bed Count')) {
+            item.capacity = $(elem).text().replace(/\D/g, '')
         }
     }
-    return items
+    let html: any = $(".main-content > div > div > p").first().html()
+    let startIndex = html?.indexOf('fa-phone') + 14
+    html = html?.slice(startIndex, html.length)
+    let endIndex = html?.indexOf('<br>')
+    item.phone = html?.slice(0, endIndex)?.trim()
+
+
+    return item
 }
 
 export const scrapeTexusInfoFromTable = async ($: CheerioAPI) => {
@@ -35,12 +40,11 @@ export const scrapeTexusInfoFromTable = async ($: CheerioAPI) => {
         item.url = url || ''
         item.state = 'Texas'
         if (item.url) {
+            item = await scrapeFromDetailsPage(item)
             providers.push(item)
         }
-        let readFilesFromFl
     }
     await Promise.all(providers)
-    providers = await scrapeFromDetailsPage(providers)
 
     return providers
 }
