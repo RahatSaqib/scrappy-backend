@@ -7,7 +7,7 @@ import getPropertiesByIDApi from "../apis/get-properties-by-id";
 const router: Router = express.Router();
 
 // creat a admin
-router.get("/scrape-data-from-sources", scrapeDataFromSources);
+router.post("/scrape-data-from-sources", scrapeDataFromSources);
 router.post("/search-properties", searchPropertiesApi);
 router.post("/get-properties-by-id", getPropertiesByIDApi);
 

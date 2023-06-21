@@ -1,5 +1,5 @@
 
-import { Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { executeQuery, readFileFromCsv, siteAndUrl, tables } from "../common/common";
 import cheerio from "cheerio";
 import { scrapeTexusInfoFromTable } from "../sites/texas";
@@ -92,7 +92,7 @@ async function updateProviders(providers: PropertyType[], propertyId: string | n
     }
 }
 
-const scrapeDataFromSources = async (res: Response): Promise<any> => {
+const scrapeDataFromSources = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     let filepath = 'sample_data/Sample_Properties_Data.csv'
     var properties: any = await readFileFromCsv(filepath);
 
@@ -110,7 +110,6 @@ const scrapeDataFromSources = async (res: Response): Promise<any> => {
         for await (let property of properties) {
             await page.goto(siteAndUrl[property.State], { waitUntil: 'domcontentloaded', timeout: 0 });
             providers = await handleEdgeCases(page, property, providers)
-            console.log(providers)
             let tableName = tables.properties
             let searchQuery = `select * from ${tableName} where name = '${property.Name}'`
             let response = await executeQuery(searchQuery)
@@ -130,19 +129,16 @@ const scrapeDataFromSources = async (res: Response): Promise<any> => {
 
         res.status(200).json({
             success: true,
-            data: 'Data Scraped Successfully',
+            message: 'Data Scraped Successfully',
         })
     }
     catch (err) {
         await browser.close()
-        console.log(err)
-        // res.status(500).json({
-        //     success: false,
-        //     data: 'Data Scraping Failed',
-        // })
+        res.status(500).json({
+            success: false,
+            message: 'Data Scraping Failed',
+        })
     }
-
-
 }
 
 export default scrapeDataFromSources
