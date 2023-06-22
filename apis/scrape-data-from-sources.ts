@@ -83,7 +83,7 @@ async function handleCasesForDifferentSources(page: Page, property: any) {
 async function updateProviders(providers: PropertyType[], propertyId: string | number, propertyName: string) {
     try {
         for (let provider of providers) {
-            let searchQuery = `select id from ${tables.providers} where name='${propertyName}' and property_id='${propertyId}' and zipcode='${provider.zipcode}'`
+            let searchQuery = `select id from ${tables.providers} where name='${propertyName}' and property_id='${propertyId}' and zipcode='${provider.zipcode}' and type='${provider.type}'`
             let response = await executeQuery(searchQuery)
             if (!response.length) {
                 let insertQuery = `insert into ${tables.providers}
