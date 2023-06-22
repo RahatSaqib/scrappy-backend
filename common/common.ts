@@ -1,11 +1,22 @@
 import db from '../config/connectToDatabase'
 import puppeteer from 'puppeteer'
-import axios from "axios";
 import cheerio from 'cheerio'
 import fs from 'fs';
 import csv from "csv-parser";
 import dbTables from './db-tables';
-const dbName = process.env.DB_DATABASE
+
+/**
+ * Object for data sources which need to scrape
+ */
+
+export const siteAndUrl: any = {
+    Texas: 'https://apps.hhs.texas.gov/LTCSearch/namesearch.cfm',
+    Florida: "https://www.floridahealthfinder.gov/facilitylocator/FacilitySearch.aspx"
+}
+
+/**
+ * Object for Table names from db
+ */
 
 export const tables: any = {
     properties: "properties",
@@ -13,47 +24,42 @@ export const tables: any = {
     files: "files",
 }
 
+/**
+ * Object for Creating Table based on the table name
+ */
+
 const createTableQuery: any = {
     [tables['properties']]: dbTables.createPropertyTable,
     [tables['providers']]: dbTables.createProvidersTable,
     [tables['files']]: dbTables.createFilesTable,
 }
 
-export const isValidImageOrMarker = (fileName: string) => {
-    if (!fileName) {
-        return false
-    }
-    if (fileName == '' || fileName.toLowerCase() == 'n/a') {
-        return false
-    }
-    else {
-        return true
-    }
-}
-export const isValidValueOrKey = (value: any) => {
-    if (!value || value == '' || value?.toLowerCase() == 'n/a') {
-        return false
-    }
-    else {
-        return true
-    }
-}
-export const log = (message = '', value = '') => {
-    if (value == '') return console.log(message)
-    return console.log(message, value)
-}
-
+/**
+ * Function for getting Table name from SQL Query
+ * @param sql : sql string with table name
+ */
 
 export const getTableNameFromSql = async (sql: any) => {
     let matchIndex = sql.match(/scrappy_db/i).index
     let tableName = sql.slice(matchIndex, sql.length).split(/[\s]+/)[0]
     return tableName
 }
+
+/**
+ * Function for getting column name from SQL Query
+ * @param message :erro message from sql
+ */
+
 export const getColumnNameFromSql = async (message: any) => {
     let matchIndex = message.match(/'/i).index
     let columnName = message.slice(matchIndex, message.length).split(/[\s]+/)[0].replaceAll("'", '')
     return columnName
 }
+
+/**
+ * Function for executing SQL query
+ * @param query :The query you want to run
+ */
 
 export const executeQuery = async (query: string) => {
     let res = await db.query(query).catch(async (err: any) => {
@@ -85,46 +91,20 @@ export const executeQuery = async (query: string) => {
     })
     return res?.length > 0 ? res[0] : []
 }
-const processTableName = async (name: string) => {
-    let splittedName = name.split(/[\s-&]+/)
-    let joinedName = splittedName.join('')
-    const table = dbName + '_' + joinedName.toLowerCase()
-    return table
-}
-export const returnValidJson = async (data: any) => {
-    if (!data) {
-        return {}
-    }
-    if (typeof data == 'string') {
-        if (data == 'undefined' || data == "" || data.toLowerCase() == "n/a") {
-            return {}
-        }
-        else {
-            let parsedData = JSON.parse(data)
-            return parsedData
-        }
-    }
-    else if (typeof data == 'object') {
-        return data
-    }
-    else {
-        return {}
-    }
 
-}
-export const getTable = async (type: any) => {
-    const table = await processTableName(type)
-    let query = `SELECT * FROM  ${table}`
-    let res = await executeQuery(query)
-    return table
 
-}
+
 // export const puppeteerResponse = async (url: string) => {
 //     const browser = await puppeteer.launch({ headless: true });
 //     const page = await browser.newPage();
 //     await page.goto(url, { waitUntil: 'networkidle2' });
 //     return page
 // }
+
+/**
+ * Function for get external url informations
+ * @param url : Url that needs to scrap
+ */
 
 export const getElementFromUrl = async (url: string) => {
     const browser = await puppeteer.launch({
@@ -143,14 +123,20 @@ export const getElementFromUrl = async (url: string) => {
     return $
 }
 
-export const siteAndUrl: any = {
-    Texas: 'https://apps.hhs.texas.gov/LTCSearch/namesearch.cfm',
-    Florida: "https://www.floridahealthfinder.gov/facilitylocator/FacilitySearch.aspx"
-}
+
+/**
+ * Function for wait process by specific time
+ * @param ms : time you need to wait
+ */
 
 export function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+/**
+ * Function for reading file from csv
+ * @param filepath : path of csv file
+ */
 
 export const readFileFromCsv = async (filepath: string) => {
     var csvData: any = [];
@@ -167,6 +153,10 @@ export const readFileFromCsv = async (filepath: string) => {
             });
     })
 }
+
+/**
+ * Function for creating db tables if not exists
+ */
 
 export const checkTableExistOrNot = async () => {
     for (let table in tables) {

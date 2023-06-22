@@ -1,6 +1,13 @@
 import ErrorHandler from "./errorHandler";
 import { NextFunction, Request, Response } from "express";
 
+/**
+* Middlewre Function for Log the Errors
+@param req: request from client side
+@param res: res which will recieve on client side
+@param next: if I need to go throw any kind of function after processing  logic.
+*/
+
 const handler = (err: any, req: Request, res: Response, next: NextFunction) => {
 
     err.statusCode = err.statusCode || 500;

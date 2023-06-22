@@ -1,4 +1,8 @@
 
+/**
+ * Query for Creating properties Table
+ */
+
 const createPropertyTable = `CREATE TABLE properties (
         id int NOT NULL AUTO_INCREMENT,
         name varchar(100),
@@ -8,6 +12,9 @@ const createPropertyTable = `CREATE TABLE properties (
         PRIMARY KEY (id)
     );`
 
+/**
+* Query for Creating providers Table
+*/
 
 const createProvidersTable = `CREATE TABLE providers (
         id int NOT NULL AUTO_INCREMENT,
@@ -27,6 +34,9 @@ const createProvidersTable = `CREATE TABLE providers (
         FOREIGN KEY (property_id) REFERENCES properties(id)
     );`
 
+/**
+* Query for Creating files Table
+*/
 
 const createFilesTable = `CREATE TABLE files (
         id int NOT NULL AUTO_INCREMENT,

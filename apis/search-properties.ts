@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { executeQuery, tables } from "../common/common";
 
+/**
+* API Function for SEARCH properties from db
+@param req: request from client side
+@param res: res which will recieve on client side
+@param next: if I need to go throw any kind of function after processing business logic.
+*/
 
 const searchPropertiesApi = async (req: Request, res: Response) => {
     try {

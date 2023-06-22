@@ -6,9 +6,13 @@ import getPropertiesByIDApi from "../apis/get-properties-by-id";
 
 const router: Router = express.Router();
 
-// creat a admin
+// Routes from Scrape data from sources
 router.post("/scrape-data-from-sources", scrapeDataFromSources);
+
+// Routes from Search Properties
 router.post("/search-properties", searchPropertiesApi);
+
+// Routes from Search Properties by ID
 router.post("/get-properties-by-id", getPropertiesByIDApi);
 
 

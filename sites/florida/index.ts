@@ -5,6 +5,12 @@ import { CheerioAPI } from "cheerio";
 
 const baseUrl = 'https://quality.healthfinder.fl.gov/facilitylocator/'
 
+
+/**
+* Function for Scrape Florida data from Cheerio Content  
+@param $: CheerioAPI content from browser
+*/
+
 export const scrapeFloridaInfoFromTable = async ($: CheerioAPI) => {
 
     let providers: PropertyType[] = []

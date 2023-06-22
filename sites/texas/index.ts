@@ -5,6 +5,12 @@ import { CheerioAPI } from "cheerio";
 
 const baseUrl = 'https://apps.hhs.texas.gov/LTCSearch/'
 
+
+/**
+* Function for Scrape Texas data from external page Content  
+@param item: object  that will be updated on db
+*/
+
 async function scrapeFromDetailsPage(item: PropertyType) {
 
     let $ = await getElementFromUrl(item.url)
@@ -23,6 +29,11 @@ async function scrapeFromDetailsPage(item: PropertyType) {
 
     return item
 }
+
+/**
+* Function for Scrape Texas data from Cheerio Content  
+@param $: CheerioAPI content from browser
+*/
 
 export const scrapeTexusInfoFromTable = async ($: CheerioAPI) => {
     let providers: PropertyType[] = []
